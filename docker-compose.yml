@@ -1,0 +1,44 @@
+version: '1.0'
+
+services:
+  api_users:
+    build: ./sis-bank
+    restart: always
+    ports:
+      - 8080:8080
+    links:
+      - mongo:swiftpay-mongo-1
+      - eureka:swiftpay-eureka-1
+    networks:
+      - eureka
+      - spring-mongo
+  eureka:
+    image: springcloud/eureka
+    restart: always
+    ports:
+      - 8761:8761
+    networks:
+      - eureka
+  gateway:
+    build: ./sis-bank-gateway
+    restart: always
+    ports:
+      - 5001:5001
+    links:
+      - eureka:swiftpay-eureka-1
+    networks:
+      - eureka
+  mongo:
+    image: mongo
+    command: mongod --auth
+    environment:
+        MONGO_INITDB_ROOT_USERNAME: sisbank
+        MONGO_INITDB_ROOT_PASSWORD: sisbank123
+    volumes:
+        - /home/Docker/Volumes/MongoDB:/data/db
+    networks:
+      - spring-mongo
+
+networks:
+  eureka: {}
+  spring-mongo: {}

@@ -1,0 +1,13 @@
+spring:
+    application:
+        name: swiftpay-gateway
+    datasource:
+        eureka:
+            host: ${EUREKA_HOST:sis-bank-eureka}
+            port: ${EUREKA_PORT:8761}
+eureka:
+    client:
+        service-url:
+            defaultZone: http://localhost:8761/eureka
+server:
+    port: 5001

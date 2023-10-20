@@ -1,0 +1,17 @@
+{"properties": [
+  {
+    "name": "spring.datasource.eureka.host",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.datasource.eureka'"
+  },
+  {
+    "name": "spring.datasource.eureka.port",
+    "type": "java.lang.Integer",
+    "description": "A description for 'spring.datasource.eureka.port'"
+  },
+  {
+    "name": "spring.datasource.api_users",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.datasource.api_users'"
+  }
+]}

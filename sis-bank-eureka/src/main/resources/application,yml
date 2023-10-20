@@ -1,0 +1,11 @@
+spring:
+    application:
+        name: swiftpay-eureka
+eureka:
+    client:
+        register-with-eureka: false
+        fetch-registry: false
+        service-url:
+            defaultZone: http://swiftpay-eureka-1:8761/eureka
+server:
+    port: 8761:5000

@@ -1,0 +1,17 @@
+{"properties": [
+  {
+    "name": "java.secret",
+    "type": "java.lang.String",
+    "description": "A description for 'java.secret'"
+  },
+  {
+    "name": "java.hostusers",
+    "type": "java.lang.String",
+    "description": "A description for 'java.hostusers'"
+  },
+  {
+    "name": "spring.datasource.platform",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.datasource.platform'"
+  }
+]}
