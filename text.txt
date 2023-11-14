@@ -1,0 +1,40 @@
+api_approve:
+    build: ./sis-bank-approve
+    restart: always
+    environment:
+       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
+    ports:
+      - 8081:8081
+    links:
+      - mongo:swiftpay-mongo-1
+      - postgres:swiftpay-postgres-1
+      - eureka:swiftpay-eureka-1
+    networks:
+      - eureka
+      - spring-mongo
+      - spring-postgres
+
+  api_borrowing:
+    build: ./sis-bank-borrowing
+    restart: always
+    environment:
+       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
+    ports:
+      - 8082:8082
+    links:
+      - postgres:swiftpay-postgres-1
+      - eureka:swiftpay-eureka-1
+    networks:
+      - eureka
+      - spring-postgres
+postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    volumes:
+        - /home/Docker/Volumes/Postgres:/data/db
+    networks:
+      - spring-postgres

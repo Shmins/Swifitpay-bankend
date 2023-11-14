@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.http.HttpStatus;
 
@@ -17,13 +16,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import com.bank.approve.domain.approves.ApproveBorrowing;
 import com.bank.approve.usecase.approve.borrowing.ApproveBorrowingService;
+import com.bank.approve.usecase.approve.borrowing.BorrowingService;
 import com.bank.approve.usecase.approve.borrowing.BorrowingTdo;
 
 
@@ -32,26 +31,29 @@ import com.bank.approve.usecase.approve.borrowing.BorrowingTdo;
 public class ApproveBorrowingController {
     @Autowired
     private ApproveBorrowingService approveBorrowingService;
-    @Autowired
-    @Value("${java.hostusers}")
-    private String host;
+    private final BorrowingService borrowingService;
 
+    public ApproveBorrowingController(ApproveBorrowingService approveBorrowingService, BorrowingService borrowingService){
+        this.approveBorrowingService = approveBorrowingService;
+        this.borrowingService = borrowingService;
+    }
     @PostMapping(value = "/", produces = "application/json")
     public ResponseEntity<?> saveApprove(@RequestBody BorrowingTdo data) {
         try {
             ApproveBorrowing approve = new ApproveBorrowing(
-                    data.id(),
-                    data.cpf());
-            ApproveBorrowing result = this.approveBorrowingService.createApprove(approve);
-            return new ResponseEntity<>(new ApproveBorrowing(
-                    result.getBorrowingId(),
-                    result.getCpfCreatedReq()), HttpStatus.OK);
+                    data.getBorrowingId(),
+                    data.getApprovedBy(),
+                    false,
+                    false,
+                    LocalDateTime.now(),
+                    LocalDateTime.now());
+            this.approveBorrowingService.createApprove(approve); 
+            return new ResponseEntity<>(HttpStatus.OK);
 
         } catch (Exception e) {
             return new ResponseEntity<>(e, HttpStatus.valueOf(500));
         }
     }
-
     @PreAuthorize("hasRole('ROLE_ADM') or hasRole('ROLE_BOSS')")
     @GetMapping(value = "/{id}")
     public ResponseEntity<?> getById(@PathVariable("id") Long id) {
@@ -75,7 +77,6 @@ public class ApproveBorrowingController {
             return new ResponseEntity<>(HttpStatus.valueOf(500));
         }
     }
-
    
     @PutMapping(value = "/{id}", produces = "application/json")
     public ResponseEntity<?> updateById(@PathVariable("id") Long id, @RequestBody ApproveBorrowing data) {
@@ -97,21 +98,20 @@ public class ApproveBorrowingController {
         }
     }
 
-    @PutMapping(value = "/borrowing/{decision}/{id}")
+    @PutMapping(value = "/{decision}/{id}")
     @PreAuthorize("hasRole('ROLE_ADM') or hasRole('ROLE_BOSS')")
     public ResponseEntity<?> approveBorrowing(@PathVariable("decision") Boolean isApproved,
-            @PathVariable("id") Long id) {
+            @PathVariable("id") Long id, @RequestHeader("Authorization") String token) {
         try {
-            RestTemplate restTemplate = new RestTemplate();
             ApproveBorrowing approve = this.approveBorrowingService.getApproveById(id);
             if (Boolean.TRUE.equals(isApproved)) {
-                restTemplate.put(String.format("http:%s/approve/v1/borrowing", host), null);
-
+                this.borrowingService.sendApprovedBorrowing(approve.getBorrowingId(), token);
 
                 approve.setIsApproved(true);
                 this.approveBorrowingService.updateApprove(approve);
 
             } else {
+                this.borrowingService.sendRefusedBorrowing(approve.getBorrowingId(), token);
                 approve.setIsRefused(true);
                 this.approveBorrowingService.updateApprove(approve);
 
@@ -121,7 +121,7 @@ public class ApproveBorrowingController {
         } catch (
 
         Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.valueOf(500));
+            return new ResponseEntity<>(e, HttpStatus.valueOf(500));
 
         }
     }

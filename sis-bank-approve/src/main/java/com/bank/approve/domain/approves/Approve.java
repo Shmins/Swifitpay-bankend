@@ -3,13 +3,17 @@ package com.bank.approve.domain.approves;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.MappedSuperclass;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @MappedSuperclass
 @Getter
 @Setter
-public class Approve {
+@AllArgsConstructor
+@NoArgsConstructor
+public class Approve{
 
     private Boolean isApproved;
 
@@ -18,11 +22,4 @@ public class Approve {
     private LocalDateTime createdAt;
 
     private LocalDateTime updateAt;
-
-    public Approve(){
-        this.isApproved = false;
-        this.isRefused = false;
-        this.createdAt = LocalDateTime.now();
-        this.updateAt = LocalDateTime.now();
-    }
 }

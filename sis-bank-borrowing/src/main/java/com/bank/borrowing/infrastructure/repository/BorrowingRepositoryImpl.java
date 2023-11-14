@@ -170,5 +170,4 @@ public class BorrowingRepositoryImpl implements BorrowingRepository{
         throw new UnsupportedOperationException("Unimplemented method 'findAllByCpf'");
     }
 
- 
 }

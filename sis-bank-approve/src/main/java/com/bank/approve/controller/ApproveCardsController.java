@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.http.HttpStatus;
 
@@ -22,30 +21,35 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import com.bank.approve.domain.approves.ApproveCards;
+import com.bank.approve.domain.components.cardmodel.Card;
+import com.bank.approve.domain.entity.Client;
+import com.bank.approve.usecase.account.AccountDto;
 import com.bank.approve.usecase.approve.ApproveCardsService;
+import com.bank.approve.usecase.client.ClientService;
 
 @RestController
-@RequestMapping("approve/v1/cards")
+@RequestMapping("approve/v1/card")
 public class ApproveCardsController {
 
     @Autowired
     private ApproveCardsService approveCardsService;
-
     @Autowired
-    @Value("${java.hostusers}")
-    private String host;
+    private ClientService clientService;
 
-    @PostMapping(value = "/borrowing", produces = "application/json")
-    public ResponseEntity<?> saveApprove(@RequestBody ApproveCards data) {
+    @PostMapping(value = "/", produces = "application/json")
+    public ResponseEntity<?> saveApprove(@RequestBody String data) {
         try {
             var client = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
             ApproveCards approve = new ApproveCards(
-                    data.getNumberCard(),
-                    client.getUsername());
+                    data,
+                    client.getUsername(),
+                    false,
+                    false,
+                    LocalDateTime.now(),
+                    LocalDateTime.now());
             ApproveCards result = this.approveCardsService.createApprove(approve);
 
             return new ResponseEntity<>(result, HttpStatus.OK);
@@ -101,20 +105,35 @@ public class ApproveCardsController {
         }
     }
 
-    @PutMapping(value = "/cards/{decision}/{id}")
+    @PutMapping(value = "/{decision}/{id}")
     @PreAuthorize("hasRole('ROLE_ADM') or hasRole('ROLE_BOSS')")
     public ResponseEntity<?> approveCards(@PathVariable("decision") Boolean isApproved, @PathVariable("id") Long id) {
         try {
-            RestTemplate restTemplate = new RestTemplate();
             ApproveCards approve = this.approveCardsService.getApproveById(id);
 
             if (Boolean.TRUE.equals(isApproved)) {
-                /* Card card = approve.getCard();
-                card.setActive(true);
-                restTemplate.put(String.format("http:%s/approve/v1/cards/true/", host), card); */
+                Client client = this.clientService.getClientById(approve.getCpfCreatedReq());
 
-                approve.setIsApproved(true);
-                this.approveCardsService.updateApprove(approve);
+                Card card = client.getCards().stream()
+                        .filter(res -> res.getNumberCard().equals(approve.getNumberCard())).toList().get(0);
+                if (card == null) {
+                    List<AccountDto> accounts = client.getAccount();
+                    for (AccountDto acc : accounts) {
+                        for (Card n : acc.getCards()) {
+                            if (n.getNumberCard().equals(approve.getNumberCard())) {
+                                n.setAuthorized(true);
+                            }
+                        }
+                    }
+                    client.setAccount(accounts);
+                    this.clientService.updateClient(client);
+                } else {
+                    card.setAuthorized(true);
+                    
+                    this.clientService.updateClient(client);
+                    approve.setIsApproved(true);
+                    this.approveCardsService.updateApprove(approve);
+                }
 
             } else {
                 approve.setIsRefused(true);

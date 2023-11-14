@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import com.bank.borrowing.domain.borrowing.Borrowing;
 
+
 @Repository
 public interface BorrowingRepository extends JpaRepository<Borrowing, Long>{
     List<Borrowing> findAllByCpf(String cpf);

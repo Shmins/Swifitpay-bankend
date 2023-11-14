@@ -35,12 +35,12 @@ public class Configurations {
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
-                        .anyRequest().permitAll())
+                        .anyRequest().authenticated())
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
                 .cors(res -> res.configurationSource(req -> {
                     var cors = new CorsConfiguration();
                     cors.setAllowedOrigins(
-                            List.of("http://10.14.10.189:3000", "http://localhost:3000", "http://localhost:8080", "http://localhost:8082"));
+                            List.of("http://localhost:5001", "http://localhost:3000", "http://10.14.11.165:3000"));
                     cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
                     cors.setAllowedHeaders(List.of("*"));
                     return cors;

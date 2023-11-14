@@ -1,18 +1,15 @@
 package com.bank.approve.controller;
 
 import java.time.LocalDateTime;
-
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.http.HttpStatus;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,12 +19,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import com.bank.approve.domain.approves.ApproveAccount;
-import com.bank.approve.domain.components.NumberAgency;
 import com.bank.approve.domain.components.Account;
+import com.bank.approve.domain.entity.Client;
+import com.bank.approve.usecase.account.AccountDto;
+import com.bank.approve.usecase.account.AccountService;
 import com.bank.approve.usecase.approve.ApproveAccountService;
+import com.bank.approve.usecase.client.ClientService;
 
 @RestController
 @RequestMapping("approve/v1/account")
@@ -37,20 +36,34 @@ public class ApproveAccountController {
     private ApproveAccountService approveAccountService;
 
     @Autowired
-    @Value("${java.hostusers}")
-    private String host;
+    private AccountService accountService;
 
-    @PostMapping(value = "/borrowing", produces = "application/json")
-    public ResponseEntity<?> saveApprove(@RequestBody ApproveAccount data) {
+    @Autowired
+    private ClientService clientService;
+
+    @PostMapping(value = "/", produces = "application/json")
+    public ResponseEntity<?> saveApprove(@RequestBody AccountDto data) {
         try {
-            var client = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            Account account = new Account(
+                null,
+                    data.getTypeAccount(),
+                    null,
+                    data.getCpf(),
+                    null,
+                    LocalDateTime.now(),
+                    LocalDateTime.now());
+            Account accountCreated = this.accountService.createAccount(account);
 
             ApproveAccount approve = new ApproveAccount(
-                    data.getAccountId(),
-                    client.getUsername());
-            ApproveAccount result = this.approveAccountService.createApprove(approve);
+                    accountCreated,
+                    data.getCpf(),
+                    false,
+                    false,
+                    LocalDateTime.now(),
+                    LocalDateTime.now());
+            this.approveAccountService.createApprove(approve);
 
-            return new ResponseEntity<>(result, HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.OK);
 
         } catch (Exception e) {
             return new ResponseEntity<>(e, HttpStatus.valueOf(500));
@@ -74,8 +87,7 @@ public class ApproveAccountController {
     @PreAuthorize("hasRole('ROLE_ADM') or hasRole('ROLE_BOSS')")
     public ResponseEntity<?> getApproveBorrowingAll() {
         try {
-            List<ApproveAccount> result = this.approveAccountService.getAll();
-            return new ResponseEntity<>(result, HttpStatus.valueOf(200));
+            return new ResponseEntity<>(this.approveAccountService.getAll(), HttpStatus.valueOf(200));
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.valueOf(500));
         }
@@ -103,25 +115,42 @@ public class ApproveAccountController {
         }
     }
 
-    @PutMapping(value = "/account/{decision}/{id}")
-    @PreAuthorize("hasRole('ROLE_ADM') or hasRole('ROLE_BOSS')")
-    public ResponseEntity<?> approveAccount(@PathVariable("decision") Boolean decision,
-            @PathVariable("id") Long id, @RequestBody NumberAgency data) {
+    @PutMapping(value = "/{decision}/{id}")
+    public ResponseEntity<?> approveAccount(@PathVariable("decision") Boolean decision, @PathVariable("id") Long id) {
         try {
-            RestTemplate restTemplate = new RestTemplate();
-            if (Boolean.TRUE.equals(decision) && id != null) {
-                ApproveAccount approve = this.approveAccountService.getApproveById(id);
-/* 
-                Account account = new Account(approve.getAccount().getTypeAccount(), data, approve.getCpfCreatedReq());
-                restTemplate.put("http://localhost:8080/approve/v1/account/true", account); */
+            ApproveAccount approve = this.approveAccountService.getApproveById(id);
 
-            }else{
-                restTemplate.put("http://localhost:8080/approve/v1/account/false", null);
+            Account account = approve.getAccountId();
+
+            Client client = this.clientService.getClientById(approve.getCpfCreatedReq());
+
+            List<AccountDto> accounts = client.getAccount();
+
+            AccountDto accountDto = new AccountDto(
+                    account.getId(),
+                    new ArrayList<>(),
+                    account.getTypeAccount(),
+                    null,
+                    account.getCpf(),
+                    LocalDateTime.now(),
+                    LocalDateTime.now());
+
+            accounts.add(accountDto);
+
+            client.setAccount(accounts);
+
+            Client update = this.clientService.updateClient(client);
+
+            if (update != null) {
+
+                approve.setIsApproved(true);
+                this.approveAccountService.updateApprove(approve);
+
             }
-            return new ResponseEntity<>(HttpStatus.OK);
+            return new ResponseEntity<>(update, HttpStatus.OK);
 
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.valueOf(500));
+            return new ResponseEntity<>(e, HttpStatus.valueOf(500));
         }
     }
 

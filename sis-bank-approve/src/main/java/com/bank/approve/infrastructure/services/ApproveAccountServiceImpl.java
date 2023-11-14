@@ -8,16 +8,26 @@ import org.springframework.stereotype.Service;
 
 import com.bank.approve.domain.approves.ApproveAccount;
 import com.bank.approve.domain.approves.repository.ApproveAccountRepository;
+import com.bank.approve.domain.components.Account;
+import com.bank.approve.usecase.account.AccountService;
 import com.bank.approve.usecase.approve.ApproveAccountService;
 
 @Service
 public class ApproveAccountServiceImpl implements ApproveAccountService {
     @Autowired
     private ApproveAccountRepository approveRepository;
+    @Autowired
+    private AccountService accountService;
 
     @Override
     public ApproveAccount createApprove(ApproveAccount approve) {
-        return this.approveRepository.save(approve);
+        Account account = this.accountService.getAccountById(approve.getAccountId().getId());
+        ApproveAccount approveAccount = this.approveRepository.save(approve);
+
+        account.setApproveAccount(approveAccount);
+        this.accountService.updateAccount(account);
+
+        return approveAccount;
     }
 
     @Override
@@ -32,8 +42,8 @@ public class ApproveAccountServiceImpl implements ApproveAccountService {
 
     @Override
     public ApproveAccount getApproveById(Long id) {
-        Optional<ApproveAccount> borrowing = this.approveRepository.findById(id);
-        return borrowing.isPresent() ? borrowing.get() : null;
+        Optional<ApproveAccount> approve = this.approveRepository.findById(id);
+        return approve.isPresent() ? approve.get() : null;
     }
 
     @Override

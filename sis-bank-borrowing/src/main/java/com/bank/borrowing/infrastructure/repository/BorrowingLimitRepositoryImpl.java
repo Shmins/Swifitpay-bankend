@@ -166,4 +166,9 @@ public class BorrowingLimitRepositoryImpl implements BorrowingLimitRepository{
         throw new UnsupportedOperationException("Unimplemented method 'findBy'");
     }
 
+    @Override
+    public BorrowingLimit findByCpf(String cpf) {
+        throw new UnsupportedOperationException("Unimplemented method 'findByCpf'");
+    }
+
 }

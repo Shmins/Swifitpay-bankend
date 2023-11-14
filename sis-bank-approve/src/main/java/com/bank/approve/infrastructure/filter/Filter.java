@@ -1,23 +1,19 @@
 package com.bank.approve.infrastructure.filter;
 
 import java.io.IOException;
-import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.bank.approve.domain.entitys.Administrator;
-import com.bank.approve.domain.entitys.Boss;
+import com.bank.approve.domain.entity.Administrator;
+import com.bank.approve.domain.entity.Boss;
+import com.bank.approve.domain.entity.Client;
+import com.bank.approve.domain.entity.Official;
 import com.bank.approve.infrastructure.token.TokenService;
+import com.bank.approve.usecase.user.UserServiceClient;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -28,55 +24,52 @@ import jakarta.servlet.http.HttpServletResponse;
 public class Filter extends OncePerRequestFilter {
   @Autowired
   private TokenService tokenService;
-  @Autowired
-  @Value("${java.hostusers}")
-  private String host;
+  private final UserServiceClient userServiceClient;
+
+  public Filter(TokenService tokenService, UserServiceClient userServiceClient) {
+    this.userServiceClient = userServiceClient;
+    this.tokenService = tokenService;
+  }
 
   @Override
   protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain)
       throws ServletException, IOException {
-    String token;
-    var authorization = req.getHeader("Authorization");
+
+    String authorization = req.getHeader("Authorization");
     if (authorization != null) {
-      token = authorization.replace("Bearer", "");
+      String token = authorization.replace("Bearer", "");
+
       var role = this.tokenService.getIssuer(token);
-      RestTemplate restTemplate = new RestTemplate();
+
+      var username = this.tokenService.getSubject(token);
+
       switch (role) {
+        case ("ROLE_CLIENT"): {
+          Client client = this.userServiceClient.getClient(username, token);
+
+          var auth = new UsernamePasswordAuthenticationToken(client, null, client.getAuthorities());
+          SecurityContextHolder.getContext().setAuthentication(auth);
+          break;
+        }
         case ("ROLE_OFFICIAL"): {
-          HttpHeaders headers = new HttpHeaders();
-          headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-          headers.set("Authorization", authorization);
-          final HttpEntity<String> entity = new HttpEntity<>(headers);
-          var adm = restTemplate.exchange(String.format("http:%s/official/v1/", host), HttpMethod.GET, entity, Administrator.class).getBody();
-          if (adm != null) {
-            var auth = new UsernamePasswordAuthenticationToken(adm, null, adm.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(auth);
-          }
+          Official official = this.userServiceClient.getOfficial(username, token);
+
+          var auth = new UsernamePasswordAuthenticationToken(official, null, official.getAuthorities());
+          SecurityContextHolder.getContext().setAuthentication(auth);
           break;
         }
         case ("ROLE_ADM"): {
-          HttpHeaders headers = new HttpHeaders();
-          headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-          headers.set("Authorization", authorization);
-          final HttpEntity<String> entity = new HttpEntity<>(headers);
-          var adm = restTemplate.exchange(String.format("http:%s/adm/v1/", host), HttpMethod.GET, entity, Administrator.class).getBody();
-          if (adm != null) {
-            var auth = new UsernamePasswordAuthenticationToken(adm, null, adm.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(auth);
-          }
+          Administrator adm = this.userServiceClient.getAdmintrator(username, token);
+
+          var auth = new UsernamePasswordAuthenticationToken(adm, null, adm.getAuthorities());
+          SecurityContextHolder.getContext().setAuthentication(auth);
           break;
         }
         case ("ROLE_BOSS"): {
-          HttpHeaders headers = new HttpHeaders();
-          headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-          headers.set("Authorization", authorization);
-          final HttpEntity<String> entity = new HttpEntity<>(headers);
-          var result = restTemplate.exchange(String.format("http:%s/boss/v1/", host), HttpMethod.GET, entity, Boss.class).getBody();
-          if (result != null) {
+          Boss boss = this.userServiceClient.getBoss(username, token);
 
-            var auth = new UsernamePasswordAuthenticationToken(result, null, result.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(auth);
-          }
+          var auth = new UsernamePasswordAuthenticationToken(boss, null, boss.getAuthorities());
+          SecurityContextHolder.getContext().setAuthentication(auth);
           break;
         }
         default: {

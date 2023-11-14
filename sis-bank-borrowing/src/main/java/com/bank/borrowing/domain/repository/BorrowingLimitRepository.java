@@ -7,5 +7,5 @@ import com.bank.borrowing.domain.borrowing.BorrowingLimit;
 
 @Repository
 public interface BorrowingLimitRepository extends JpaRepository<BorrowingLimit, Long>{
-    
+    BorrowingLimit findByCpf(String cpf);
 }

@@ -15,6 +15,7 @@ import com.bank.borrowing.usecase.borrowing.BorrowingService;
 public class BorrowingServiceImpl implements BorrowingService{
     @Autowired
     private BorrowingRepository borrowingRepository;
+
     @Override
     public Borrowing createBorrowing(Borrowing data) {
         return this.borrowingRepository.save(data);

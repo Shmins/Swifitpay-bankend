@@ -30,7 +30,7 @@ public class BorrowingLimit {
     
     private LocalDateTime updateAt;
 
-    public BorrowingLimit(String cpf, int limitMin, int limitMax) {
+    public BorrowingLimit(String cpf, Integer limitMin, Integer limitMax) {
         this.cpf = cpf;
         this.limitMin = limitMin;
         this.limitMax = limitMax;

@@ -1,13 +1,46 @@
 spring:
     application:
-        name: swiftpay-gateway
+        name: sis-bank-gateway
     datasource:
         eureka:
             host: ${EUREKA_HOST:sis-bank-eureka}
             port: ${EUREKA_PORT:8761}
+    cloud:
+        gateway:
+            routes:
+            -   id: sis-bank-users
+                uri: lb://sis-bank-users
+                predicates:
+                - Path=
+                    /client/v1/**,
+                    /official/v1/**,
+                    /adm/v1/**,
+                    /boss/v1/**,
+                    /login/v1/**
+
+
+            -   id: sis-bank-borrowing
+                uri: lb://sis-bank-borrowing
+                predicates:
+                - Path=/borrowing/v1/**
+
+            -   id: sis-bank-approve
+                uri: lb://sis-bank-approve
+                predicates:
+                - Path=/approve/v1/**
+                
+            discovery:
+                locator:
+                    enabled: true
+            
+    
 eureka:
     client:
+        registerWithEureka: true
         service-url:
-            defaultZone: http://localhost:8761/eureka
+            defaultZone: http://swiftpay-eureka-1:8761/eureka
+        healthcheck:
+            enabled: true
+
 server:
     port: 5001

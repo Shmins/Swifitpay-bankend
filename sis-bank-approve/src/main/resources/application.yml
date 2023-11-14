@@ -1,0 +1,25 @@
+spring:
+    application:
+        name: sis-bank-approve
+    jpa:
+        database: POSTGRESQL
+        show-sql: false
+        hibernate:
+            ddl-auto: update
+    datasource:
+        platform: postres
+        url: jdbc:postgresql://swiftpay-postgres-1:5432/approve
+        username: postgres
+        password: admin
+
+    data:
+        mongodb:
+            database: sis-bank
+            uri: mongodb://sisbank:sisbank123@swiftpay-mongo-1:27017
+eureka:
+    client:
+        service-url:
+            defaultZone:
+                http://swiftpay-eureka-1:8761/eureka
+server:
+    port: 8084

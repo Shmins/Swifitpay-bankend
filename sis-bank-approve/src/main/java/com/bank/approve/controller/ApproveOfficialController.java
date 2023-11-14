@@ -5,8 +5,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-
 import org.springframework.http.HttpStatus;
 
 import org.springframework.http.ResponseEntity;
@@ -20,13 +18,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import com.bank.approve.domain.approves.ApproveOfficial;
+import com.bank.approve.domain.entity.Official;
 
 import jakarta.annotation.security.RolesAllowed;
 
 import com.bank.approve.usecase.approve.ApproveOfficialService;
+import com.bank.approve.usecase.official.OfficialService;
 
 @RestController
 @RequestMapping("approve/v1/official")
@@ -36,17 +35,20 @@ public class ApproveOfficialController {
     private ApproveOfficialService approveOfficialService;
 
     @Autowired
-    @Value("${java.hostusers}")
-    private String host;
+    private OfficialService officialService;
 
-    @PostMapping(value = "/borrowing", produces = "application/json")
-    public ResponseEntity<?> saveApprove(@RequestBody ApproveOfficial data) {
+    @PostMapping(value = "/", produces = "application/json")
+    public ResponseEntity<?> saveApprove(@RequestBody String cpf) {
         try {
             ApproveOfficial approve = new ApproveOfficial(
-                    data.getCpf());
-            ApproveOfficial result = this.approveOfficialService.createApprove(approve);
+                    cpf,
+                    false,
+                    false,
+                    LocalDateTime.now(),
+                    LocalDateTime.now());
+            this.approveOfficialService.createApprove(approve);
 
-            return new ResponseEntity<>(result, HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.OK);
 
         } catch (Exception e) {
             return new ResponseEntity<>(e, HttpStatus.valueOf(500));
@@ -98,21 +100,27 @@ public class ApproveOfficialController {
         }
     }
 
-   @PutMapping(value = "/official/{decision}/{cpf}")
     @RolesAllowed("BOSS")
+    @PutMapping(value = "/{decision}/{id}")
     public ResponseEntity<?> approveOfficial(@PathVariable("decision") Boolean isApproved,
-            @PathVariable("cpf") String cpf) {
+            @PathVariable("id") Long id) {
+        ApproveOfficial approve = this.approveOfficialService.getApproveById(id);
         try {
-            RestTemplate restTemplate = new RestTemplate();
             if (Boolean.TRUE.equals(isApproved)) {
-                restTemplate.put("http://localhost:8080/approve/v1/official/true", null);
-            }else{
-                 restTemplate.put("http://localhost:8080/approve/v1/official/false", null);
+                Official official = this.officialService.getOfficialById(approve.getCpf());
+                official.setIsAuthorized(true);
+
+                this.officialService.updateOfficial(official);
+                approve.setIsApproved(true);
+                this.approveOfficialService.updateApprove(approve);
+            } else {
+                approve.setIsApproved(false);
+                this.approveOfficialService.updateApprove(approve);
             }
             return new ResponseEntity<>(HttpStatus.OK);
 
         } catch (Exception e) {
-           
+
             return new ResponseEntity<>(e.getMessage(), HttpStatus.valueOf(500));
 
         }

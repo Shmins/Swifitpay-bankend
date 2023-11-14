@@ -2,7 +2,6 @@ package com.bank.approve.usecase.approve;
 
 import java.util.List;
 
-
 import com.bank.approve.domain.approves.ApproveAccount;
 
 public interface ApproveAccountService {

@@ -1,12 +1,15 @@
 package com.bank.approve.domain.components;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +27,9 @@ public class NumberAgency {
     private String number;
 
     private String nameAgency;
+
+    @OneToMany(mappedBy = "numberAgency",cascade = CascadeType.ALL)
+    private Set<Account> account;
 
     private LocalDateTime createAt;
 

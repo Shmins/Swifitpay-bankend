@@ -4,30 +4,68 @@ services:
   api_users:
     build: ./sis-bank
     restart: always
+    environment:
+       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
     ports:
-      - 8080:8080
+      - 8082:8082
     links:
       - mongo:swiftpay-mongo-1
       - eureka:swiftpay-eureka-1
     networks:
       - eureka
       - spring-mongo
+  api_borrowing:
+    build: ./sis-bank-borrowing
+    restart: always
+    environment:
+       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
+    ports:
+      - 8083:8083
+    links:
+      - postgres:swiftpay-postgres-1
+      - eureka:swiftpay-eureka-1
+    networks:
+      - eureka
+      - spring-postgres
+
+  api_approve:
+    build: ./sis-bank-approve
+    restart: always
+    environment:
+       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
+    ports:
+      - 8084:8084
+    links:
+      - mongo:swiftpay-mongo-1
+      - postgres:swiftpay-postgres-1
+      - eureka:swiftpay-eureka-1
+    networks:
+      - eureka
+      - spring-mongo
+      - spring-postgres
+
   eureka:
-    image: springcloud/eureka
+    build: ./sis-bank-eureka
     restart: always
     ports:
       - 8761:8761
     networks:
       - eureka
+
   gateway:
     build: ./sis-bank-gateway
     restart: always
+    environment:
+       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
     ports:
       - 5001:5001
-    links:
-      - eureka:swiftpay-eureka-1
+    depends_on:
+      - eureka
+      - api_users
+      - api_borrowing
     networks:
       - eureka
+
   mongo:
     image: mongo
     command: mongod --auth
@@ -39,6 +77,32 @@ services:
     networks:
       - spring-mongo
 
+  mongo-express:
+    image: mongo-express
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=sisbank
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=sisbank123
+      - ME_CONFIG_MONGODB_URL=mongodb://sisbank:sisbank123@swiftpay-mongo-1:27017/?authSource=admin
+    depends_on:
+      - mongo
+    networks:
+      - spring-mongo
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    volumes:
+        - /home/Docker/Volumes/Postgres:/data/db
+    networks:
+      - spring-postgres
+  
+
 networks:
   eureka: {}
   spring-mongo: {}
+  spring-postgres: {}

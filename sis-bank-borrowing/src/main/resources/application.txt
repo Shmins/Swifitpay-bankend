@@ -1,0 +1,14 @@
+spring.jpa.database = POSTGRESQL
+spring.datasource.platform=postgres
+spring.datasource.url=jdbc:postgresql://localhost:5432/sis-bank-borrowing
+spring.datasource.username = postgres
+spring.datasource.password = admin
+
+spring.jpa.show-sql = true
+spring.jpa.hibernate.ddl-auto = update
+
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka
+spring.application.name=sis-bank-borrowing
+
+java.secret = ${SECRET = ""}
+server.port=8082

@@ -39,5 +39,10 @@ public class BorrowingLimitServiceImpl implements BorrowingLimitService{
     public void deleteById(Long id) {
         this.borrowingLimitRepository.deleteById(id);
     }
+
+    @Override
+    public BorrowingLimit getByCpf(String cpf) {
+       return this.borrowingLimitRepository.findByCpf(cpf);
+    }
     
 }

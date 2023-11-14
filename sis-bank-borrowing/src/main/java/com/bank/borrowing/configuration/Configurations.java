@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -40,7 +39,7 @@ public class Configurations {
                 .cors(res -> res.configurationSource(req -> {
                     var cors = new CorsConfiguration();
                     cors.setAllowedOrigins(
-                            List.of("http://10.14.10.189:3000", "http://localhost:3000", "http://localhost:8080", "http://localhost:8081"));
+                            List.of("http://localhost:5001"));
                     cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
                     cors.setAllowedHeaders(List.of("*"));
                     return cors;
